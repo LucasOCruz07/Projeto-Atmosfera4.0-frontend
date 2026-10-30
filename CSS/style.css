@@ -1200,6 +1200,24 @@ button .logo-topo{
     border-radius: 50%;
     box-shadow: 0 0 8px rgba(71, 201, 138, 0.35);
 }
+/* ========================================
+   GRÁFICO DE TEMPERATURA E UMIDADE
+======================================== */
+
+.graf-conteudo {
+    position: relative;
+    width: 100%;
+    height: 155px;
+    min-height: 155px;
+    padding: 8px 16px 14px;
+    box-sizing: border-box;
+}
+
+.graf-conteudo canvas {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+}
 
 
 

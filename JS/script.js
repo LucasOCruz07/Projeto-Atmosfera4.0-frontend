@@ -109,48 +109,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return ["Normal", "status-normal"];
     }
 
-    // Atualiza os valores dos cards
-    function atualizarSensores() {
-        const tempStatus = statusTemperaturaAtual(sensores.temperatura);
-        const umidStatus = statusUmidadeAtual(sensores.umidade);
-        const co2Status = statusCo2Atual(sensores.co2);
 
-        if (temperaturaCard) {
-            temperaturaCard.textContent =
-                `${sensores.temperatura.toFixed(1)}° C`;
-        }
-
-        if (umidadeCard) {
-            umidadeCard.textContent =
-                `${Math.round(sensores.umidade)} %HR`;
-        }
-
-        if (co2Card) {
-            co2Card.textContent =
-                `${Math.round(sensores.co2)} ppm`;
-        }
-
-        atualizarStatus(statusTemperatura, ...tempStatus);
-        atualizarStatus(statusUmidade, ...umidStatus);
-        atualizarStatus(statusCo2, ...co2Status);
-
-        if (detalheTemperatura) {
-            detalheTemperatura.textContent =
-                `${sensores.temperatura.toFixed(1)} °C`;
-        }
-
-        if (detalheUmidade) {
-            detalheUmidade.textContent =
-                `${Math.round(sensores.umidade)} %RH`;
-        }
-
-        if (detalheCo2) {
-            detalheCo2.textContent =
-                `${Math.round(sensores.co2)} ppm`;
-        }
-
-        atualizarData();
-    }
 
     // Atualiza as barras de concentração de CO2
     function atualizarBarrasCo2() {
@@ -187,89 +146,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Simula pequenas variações nos sensores
-    function simularSensores() {
-        sensores.temperatura = Math.max(
-            18,
-            Math.min(32, sensores.temperatura + (Math.random() - 0.5) * 1.2)
-        );
 
-        sensores.umidade = Math.max(
-            25,
-            Math.min(75, sensores.umidade + (Math.random() - 0.5) * 4)
-        );
-
-        sensores.co2 = Math.max(
-            400,
-            Math.min(2000, sensores.co2 + (Math.random() - 0.5) * 150)
-        );
-
-        dispositivos.forEach((dispositivo) => {
-            dispositivo.co2 = Math.max(
-                350,
-                Math.min(
-                    2000,
-                    dispositivo.co2 + (Math.random() - 0.5) * 120
-                )
-            );
-        });
-
-        atualizarSensores();
-        atualizarBarrasCo2();
-    }
-
-    // Controle dos atuadores
-    const botoesAtuadores = document.querySelectorAll(".botao-atuador");
-
-    botoesAtuadores.forEach((botao) => {
-        botao.addEventListener("click", () => {
-            const estavaLigado = botao.classList.contains("ligado");
-            const novoEstado = estavaLigado ? "desligado" : "ligado";
-
-            botao.classList.remove("ligado", "desligado");
-            botao.classList.add(novoEstado);
-
-            botao.innerHTML = `
-                <span class="indicador"></span>
-                ${novoEstado === "ligado" ? "LIGADO" : "DESLIGADO"}
-            `;
-
-            const nomeAtuador =
-                botao.closest(".atuador")
-                    ?.querySelector(".atuador-info h3")
-                    ?.childNodes[0]?.textContent.trim() || "Atuador";
-
-            if (registro) {
-                const agora = new Date().toLocaleTimeString("pt-BR");
-
-                registro.textContent =
-                    `${agora} — ${nomeAtuador}: ${novoEstado.toUpperCase()}`;
-
-                const historico = document.querySelector(
-                    ".registro-atuadores"
-                );
-
-                if (historico) {
-                    let lista = historico.querySelector(".historico-comandos");
-
-                    if (!lista) {
-                        lista = document.createElement("div");
-                        lista.className = "historico-comandos";
-                        lista.style.cssText =
-                            "max-height:70px;overflow-y:auto;";
-
-                        historico.appendChild(lista);
-                    }
-
-                    const item = document.createElement("p");
-                    item.textContent =
-                        `${agora} — ${nomeAtuador}: ${novoEstado.toUpperCase()}`;
-
-                    lista.prepend(item);
-                }
-            }
-        });
-    });
 
     // Seleção do período do gráfico
     botoesPeriodo.forEach((botao) => {
@@ -342,4 +219,260 @@ document.addEventListener("keydown", function(evento) {
         fecharMenuLateral();
     }
 });
+
+document.addEventListener("DOMContentLoaded", function () {
+    const elementoGrafico = document.getElementById(
+        "graficoTemperaturaUmidade"
+    );
+
+    if (!elementoGrafico) {
+        console.error("Elemento do gráfico não encontrado.");
+        return;
+    }
+
+    if (typeof Chart === "undefined") {
+        console.error(
+            "Chart.js não foi carregado. Verifique a biblioteca no HTML."
+        );
+        return;
+    }
+
+    const contexto = elementoGrafico.getContext("2d");
+
+    // Dados demonstrativos para cada período.
+    // Substitua pelos dados reais dos sensores quando disponíveis.
+    const dadosGrafico = {
+        "1h": {
+            labels: [
+                "09:00",
+                "09:10",
+                "09:20",
+                "09:30",
+                "09:40",
+                "09:50",
+                "10:00"
+            ],
+            temperatura: [22, 23, 22.5, 24, 23.5, 24.5, 24],
+            umidade: [58, 56, 57, 54, 55, 52, 53]
+        },
+
+        "6h": {
+            labels: [
+                "04:00",
+                "05:00",
+                "06:00",
+                "07:00",
+                "08:00",
+                "09:00",
+                "10:00"
+            ],
+            temperatura: [19, 19.5, 20, 21, 22.5, 23, 24],
+            umidade: [65, 64, 62, 60, 58, 56, 53]
+        },
+
+        "24h": {
+            labels: [
+                "10h",
+                "14h",
+                "18h",
+                "22h",
+                "02h",
+                "06h",
+                "10h"
+            ],
+            temperatura: [24, 27, 25, 22, 20, 19, 24],
+            umidade: [53, 46, 50, 58, 65, 68, 53]
+        }
+    };
+
+    // Gradientes das linhas.
+    const gradienteTemperatura = contexto.createLinearGradient(
+        0, 0, 0, 180
+    );
+
+    gradienteTemperatura.addColorStop(
+        0,
+        "rgba(245, 160, 75, 0.25)"
+    );
+
+    gradienteTemperatura.addColorStop(
+        1,
+        "rgba(245, 160, 75, 0)"
+    );
+
+    const gradienteUmidade = contexto.createLinearGradient(
+        0, 0, 0, 180
+    );
+
+    gradienteUmidade.addColorStop(
+        0,
+        "rgba(104, 169, 245, 0.20)"
+    );
+
+    gradienteUmidade.addColorStop(
+        1,
+        "rgba(104, 169, 245, 0)"
+    );
+
+    // Criação do gráfico.
+    const grafico = new Chart(contexto, {
+        type: "line",
+
+        data: {
+            labels: dadosGrafico["6h"].labels,
+
+            datasets: [
+                {
+                    label: "Temperatura (°C)",
+
+                    data: dadosGrafico["6h"].temperatura,
+
+                    borderColor: "#f5a04b",
+                    backgroundColor: gradienteTemperatura,
+
+                    borderWidth: 2,
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+
+                    pointBackgroundColor: "#f5a04b",
+                    pointBorderColor: "#1b1d21",
+
+                    fill: true,
+                    tension: 0.4,
+
+                    yAxisID: "eixoTemperatura"
+                },
+
+                {
+                    label: "Umidade (%)",
+
+                    data: dadosGrafico["6h"].umidade,
+
+                    borderColor: "#68a9f5",
+                    backgroundColor: gradienteUmidade,
+
+                    borderWidth: 2,
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+
+                    pointBackgroundColor: "#68a9f5",
+                    pointBorderColor: "#1b1d21",
+
+                    fill: true,
+                    tension: 0.4,
+
+                    yAxisID: "eixoUmidade"
+                }
+            ]
+        },
+
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+
+            interaction: {
+                mode: "index",
+                intersect: false
+            },
+
+            plugins: {
+                legend: {
+                    display: false
+                },
+
+                tooltip: {
+                    backgroundColor: "#202329",
+                    titleColor: "#ffffff",
+                    bodyColor: "#e0e0e0",
+
+                    borderColor: "#383c44",
+                    borderWidth: 1,
+
+                    padding: 10,
+
+                    displayColors: true
+                }
+            },
+
+            scales: {
+                x: {
+                    grid: {
+                        display: false
+                    },
+
+                    border: {
+                        display: false
+                    },
+
+                    ticks: {
+                        color: "#9298a3",
+                        font: {
+                            size: 10
+                        },
+
+                        maxRotation: 0,
+                        autoSkip: true
+                    }
+                },
+
+                eixoTemperatura: {
+                    type: "linear",
+                    position: "left",
+
+                    min: 10,
+                    max: 35,
+
+                    grid: {
+                        color: "rgba(255, 255, 255, 0.06)"
+                    },
+
+                    border: {
+                        display: false
+                    },
+
+                    ticks: {
+                        color: "#f5a04b",
+                        font: {
+                            size: 10
+                        },
+
+                        callback: function (valor) {
+                            return valor + "°";
+                        }
+                    }
+                },
+
+                eixoUmidade: {
+                    type: "linear",
+                    position: "right",
+
+                    min: 0,
+                    max: 100,
+
+                    grid: {
+                        drawOnChartArea: false
+                    },
+
+                    border: {
+                        display: false
+                    },
+
+                    ticks: {
+                        color: "#68a9f5",
+                        font: {
+                            size: 10
+                        },
+
+                        callback: function (valor) {
+                            return valor + "%";
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    
+        });
+ 
 
